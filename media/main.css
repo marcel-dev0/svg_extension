@@ -1,0 +1,106 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	overflow: hidden;
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+}
+
+.toolbar {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	background: var(--vscode-editorWidget-background, var(--vscode-sideBar-background));
+	border-bottom: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+	user-select: none;
+	z-index: 10;
+	position: relative;
+}
+
+.toolbar button {
+	background: var(--vscode-button-secondaryBackground);
+	color: var(--vscode-button-secondaryForeground);
+	border: none;
+	padding: 2px 8px;
+	cursor: pointer;
+	font-size: 13px;
+	line-height: 22px;
+	border-radius: 2px;
+	min-width: 28px;
+}
+
+.toolbar button:hover {
+	background: var(--vscode-button-secondaryHoverBackground);
+}
+
+#zoom-level {
+	font-size: 12px;
+	min-width: 44px;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+}
+
+.separator {
+	width: 1px;
+	height: 18px;
+	background: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+	margin: 0 4px;
+}
+
+.svg-container {
+	position: absolute;
+	top: 33px;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	overflow: hidden;
+	cursor: grab;
+}
+
+.svg-container.panning {
+	cursor: grabbing;
+}
+
+.bg-checkered {
+	background-color: #ffffff;
+	background-image:
+		linear-gradient(45deg, #e0e0e0 25%, transparent 25%),
+		linear-gradient(-45deg, #e0e0e0 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, #e0e0e0 75%),
+		linear-gradient(-45deg, transparent 75%, #e0e0e0 75%);
+	background-size: 20px 20px;
+	background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
+.bg-white {
+	background: #ffffff;
+}
+
+.bg-transparent {
+	background: var(--vscode-editor-background);
+}
+
+#svg-content {
+ 	transform-origin: 0 0;
+}
+
+#svg-content svg {
+	display: block;
+}
+
+.highlight-overlay {
+	display: none;
+	position: absolute;
+	border: 2px solid #007acc;
+	background: rgba(0, 122, 204, 0.08);
+	pointer-events: none;
+	z-index: 5;
+	border-radius: 2px;
+}
