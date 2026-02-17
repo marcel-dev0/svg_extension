@@ -14,11 +14,11 @@ let translateY = 0;
 // --- Highlight overlay (element bounding box) ---
 
 const highlightOverlay = document.createElement('div');
-highlightOverlay.className = 'highlight-overlay';
 container.appendChild(highlightOverlay);
 
 /** @type {Element | null} */
 let highlightedElement = null;
+let lastHighlightPathKey = '';
 
 function updateHighlightPosition() {
 	if (!highlightedElement) {
@@ -38,6 +38,42 @@ function updateHighlightPosition() {
 	highlightOverlay.style.top = (elRect.top - containerRect.top) + 'px';
 	highlightOverlay.style.width = elRect.width + 'px';
 	highlightOverlay.style.height = elRect.height + 'px';
+}
+
+// --- Center & scale to fit highlighted element ---
+
+/**
+ * @param {Element} el
+ */
+function centerOnElement(el) {
+	const containerRect = container.getBoundingClientRect();
+	if (containerRect.width === 0 || containerRect.height === 0) return;
+
+	const elRect = el.getBoundingClientRect();
+	if (elRect.width === 0 && elRect.height === 0) return;
+
+	// Convert element's screen rect to content-local coordinates
+	const localX = (elRect.left - containerRect.left - translateX) / scale;
+	const localY = (elRect.top - containerRect.top - translateY) / scale;
+	const localW = elRect.width / scale;
+	const localH = elRect.height / scale;
+
+	const padding = 40;
+	const availW = containerRect.width - padding * 2;
+	const availH = containerRect.height - padding * 2;
+
+	if (availW <= 0 || availH <= 0) return;
+
+	const newScale = Math.min(availW / localW, availH / localH, 10);
+
+	const elCenterX = localX + localW / 2;
+	const elCenterY = localY + localH / 2;
+
+	translateX = containerRect.width / 2 - elCenterX * newScale;
+	translateY = containerRect.height / 2 - elCenterY * newScale;
+	scale = newScale;
+
+	applyTransform();
 }
 
 // --- Path segment highlight (green overlay inside SVG) ---
@@ -242,8 +278,11 @@ window.addEventListener('message', (event) => {
 		case 'highlight': {
 			// Element highlight (blue box)
 			const path = message.path;
+			const pathKey = path ? JSON.stringify(path) : '';
+
 			if (!path) {
 				highlightedElement = null;
+				lastHighlightPathKey = '';
 				updateHighlightPosition();
 				clearSegmentHighlight();
 				break;
@@ -259,8 +298,17 @@ window.addEventListener('message', (event) => {
 				current = current.children[idx];
 			}
 
-			highlightedElement = current !== content ? current : null;
+			const newElement = current !== content ? current : null;
+			const elementChanged = pathKey !== lastHighlightPathKey;
+			highlightedElement = newElement;
+			lastHighlightPathKey = pathKey;
+
 			updateHighlightPosition();
+
+			// Center & scale when the highlighted element changes
+			if (elementChanged && newElement) {
+				centerOnElement(newElement);
+			}
 
 			// Path segment highlight (green)
 			if (message.segment) {

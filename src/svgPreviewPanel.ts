@@ -26,7 +26,7 @@ export class SvgPreviewPanel {
 		const panel = vscode.window.createWebviewPanel(
 			SvgPreviewPanel.viewType,
 			'SVG Preview',
-			vscode.ViewColumn.Beside,
+			{ viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
 			{
 				enableScripts: true,
 				retainContextWhenHidden: true,
