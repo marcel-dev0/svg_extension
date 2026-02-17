@@ -138,15 +138,6 @@ export class SvgPreviewPanel {
 	<title>SVG Preview</title>
 </head>
 <body>
-	<div class="toolbar">
-		<button id="btn-zoom-in" title="Zoom In">+</button>
-		<span id="zoom-level">100%</span>
-		<button id="btn-zoom-out" title="Zoom Out">&minus;</button>
-		<button id="btn-fit" title="Fit to View">Fit</button>
-		<button id="btn-reset" title="Reset Zoom">1:1</button>
-		<span class="separator"></span>
-		<button id="btn-bg" title="Toggle Background">BG</button>
-	</div>
 	<div id="svg-container" class="svg-container bg-checkered">
 		<div id="svg-content">${svgContent}</div>
 	</div>

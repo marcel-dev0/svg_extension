@@ -79,14 +79,6 @@ body {
 	background-position: 0 0, 0 10px, 10px -10px, -10px 0;
 }
 
-.bg-white {
-	background: #ffffff;
-}
-
-.bg-transparent {
-	background: var(--vscode-editor-background);
-}
-
 #svg-content {
  	transform-origin: 0 0;
 }
