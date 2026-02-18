@@ -5,40 +5,14 @@ const svgNS = 'http://www.w3.org/2000/svg';
 
 const container = /** @type {HTMLElement} */ (document.getElementById('svg-container'));
 const content = /** @type {HTMLElement} */ (document.getElementById('svg-content'));
-const zoomLevelEl = /** @type {HTMLElement} */ (document.getElementById('zoom-level'));
 
 let scale = 1;
 let translateX = 0;
 let translateY = 0;
 
-// --- Highlight overlay (element bounding box) ---
-
-const highlightOverlay = document.createElement('div');
-container.appendChild(highlightOverlay);
-
 /** @type {Element | null} */
 let highlightedElement = null;
 let lastHighlightPathKey = '';
-
-function updateHighlightPosition() {
-	if (!highlightedElement) {
-		highlightOverlay.style.display = 'none';
-		return;
-	}
-
-	const elRect = highlightedElement.getBoundingClientRect();
-	const containerRect = container.getBoundingClientRect();
-
-	if (elRect.width === 0 && elRect.height === 0) {
-		highlightOverlay.style.display = 'none';
-		return;
-	}
-	highlightOverlay.style.display = 'block';
-	highlightOverlay.style.left = (elRect.left - containerRect.left) + 'px';
-	highlightOverlay.style.top = (elRect.top - containerRect.top) + 'px';
-	highlightOverlay.style.width = elRect.width + 'px';
-	highlightOverlay.style.height = elRect.height + 'px';
-}
 
 // --- Center & scale to fit highlighted element ---
 
@@ -260,10 +234,49 @@ function appendHandle(g, x1, y1, x2, y2, sw) {
 	g.appendChild(line);
 }
 
+// --- Polygon / polyline point highlight (cursor-driven) ---
+
+function clearPolygonHighlight() {
+	const svg = content.querySelector('svg');
+	if (svg) {
+		svg.querySelector('.polygon-point-highlight')?.remove();
+	}
+}
+
+/**
+ * Draw highlight dots on all polygon/polyline points.
+ * @param {number[][]} points - all [x,y] pairs
+ * @param {number | null} activeIdx - index of the point the cursor is on (null = none)
+ */
+function drawPolygonPointHighlight(points, activeIdx) {
+	clearPolygonHighlight();
+
+	const svg = content.querySelector('svg');
+	if (!svg || points.length === 0) return;
+
+	const vb = svg.viewBox?.baseVal;
+	const svgW = (vb && vb.width) || svg.width?.baseVal?.value || 100;
+	const svgH = (vb && vb.height) || svg.height?.baseVal?.value || 100;
+	const size = Math.max(svgW, svgH);
+	const baseR = size * 0.008;
+	const activeR = size * 0.016;
+	const sw = size * 0.003;
+
+	const g = document.createElementNS(svgNS, 'g');
+	g.setAttribute('class', 'polygon-point-highlight');
+	g.style.pointerEvents = 'none';
+
+	for (let i = 0; i < points.length; i++) {
+		const [px, py] = points[i];
+		const isActive = i === activeIdx;
+		appendDot(g, px, py, baseR, sw, isActive ? "red" : "blue");
+	}
+
+	svg.appendChild(g);
+}
+
 function applyTransform() {
 	content.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-	zoomLevelEl.textContent = `${Math.round(scale * 100)}%`;
-	updateHighlightPosition();
 }
 
 // --- Messages from extension host ---
@@ -273,18 +286,16 @@ window.addEventListener('message', (event) => {
 	switch (message.type) {
 		case 'update':
 			content.innerHTML = message.content;
-			updateHighlightPosition();
 			break;
 		case 'highlight': {
-			// Element highlight (blue box)
 			const path = message.path;
 			const pathKey = path ? JSON.stringify(path) : '';
 
 			if (!path) {
 				highlightedElement = null;
 				lastHighlightPathKey = '';
-				updateHighlightPosition();
 				clearSegmentHighlight();
+				clearPolygonHighlight();
 				break;
 			}
 
@@ -303,8 +314,6 @@ window.addEventListener('message', (event) => {
 			highlightedElement = newElement;
 			lastHighlightPathKey = pathKey;
 
-			updateHighlightPosition();
-
 			// Center & scale when the highlighted element changes
 			if (elementChanged && newElement) {
 				centerOnElement(newElement);
@@ -315,6 +324,16 @@ window.addEventListener('message', (event) => {
 				drawSegmentHighlight(message.segment);
 			} else {
 				clearSegmentHighlight();
+			}
+
+			// Polygon/polyline point highlight
+			if (message.polygonPoints) {
+				drawPolygonPointHighlight(
+					message.polygonPoints.points,
+					message.polygonPoints.activePointIndex
+				);
+			} else {
+				clearPolygonHighlight();
 			}
 			break;
 		}

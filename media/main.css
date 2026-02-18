@@ -12,48 +12,6 @@ body {
 	font-size: var(--vscode-font-size);
 }
 
-.toolbar {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	padding: 4px 8px;
-	background: var(--vscode-editorWidget-background, var(--vscode-sideBar-background));
-	border-bottom: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
-	user-select: none;
-	z-index: 10;
-	position: relative;
-}
-
-.toolbar button {
-	background: var(--vscode-button-secondaryBackground);
-	color: var(--vscode-button-secondaryForeground);
-	border: none;
-	padding: 2px 8px;
-	cursor: pointer;
-	font-size: 13px;
-	line-height: 22px;
-	border-radius: 2px;
-	min-width: 28px;
-}
-
-.toolbar button:hover {
-	background: var(--vscode-button-secondaryHoverBackground);
-}
-
-#zoom-level {
-	font-size: 12px;
-	min-width: 44px;
-	text-align: center;
-	font-variant-numeric: tabular-nums;
-}
-
-.separator {
-	width: 1px;
-	height: 18px;
-	background: var(--vscode-editorWidget-border, var(--vscode-panel-border));
-	margin: 0 4px;
-}
-
 .svg-container {
 	position: absolute;
 	top: 33px;
@@ -87,12 +45,6 @@ body {
 	display: block;
 }
 
-.highlight-overlay {
-	display: none;
-	position: absolute;
-	border: 2px solid #007acc;
-	background: rgba(0, 122, 204, 0.08);
+.polygon-point-highlight {
 	pointer-events: none;
-	z-index: 5;
-	border-radius: 2px;
 }

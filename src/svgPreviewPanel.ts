@@ -99,10 +99,16 @@ export class SvgPreviewPanel {
 			segment = findPathSegmentAtOffset(text, offset, element.openTagStart, element.openTagEnd) ?? null;
 		}
 
+		let polygonPoints: PolygonPointsInfo | null = null;
+		if (element && (element.tagName === 'polygon' || element.tagName === 'polyline')) {
+			polygonPoints = findPolygonPointAtOffset(text, offset, element.openTagStart, element.openTagEnd) ?? null;
+		}
+
 		this.panel.webview.postMessage({
 			type: 'highlight',
 			path: element?.path ?? null,
 			segment,
+			polygonPoints,
 		});
 	}
 
@@ -254,6 +260,83 @@ function findElementAtOffset(text: string, offset: number): ElementInfo | undefi
 		openTagStart: best.openTagStart,
 		openTagEnd: best.openTagEnd,
 	};
+}
+
+// ─── Polygon / polyline point detection ─────────────────────────────
+
+interface PolygonPointsInfo {
+	points: [number, number][];
+	activePointIndex: number | null;
+}
+
+function findPolygonPointAtOffset(
+	text: string,
+	offset: number,
+	openTagStart: number,
+	openTagEnd: number,
+): PolygonPointsInfo | undefined {
+	const tagText = text.substring(openTagStart, openTagEnd);
+	const pMatch = tagText.match(/\bpoints\s*=\s*(['"])([\s\S]*?)\1/);
+	if (!pMatch || pMatch.index === undefined) {
+		return undefined;
+	}
+
+	const pValue = pMatch[2];
+	const quoteChar = pMatch[1];
+	const pValueStart = openTagStart + pMatch.index + pMatch[0].indexOf(quoteChar) + 1;
+
+	// Parse all points
+	const points: [number, number][] = [];
+	const numRegex = /-?\d*\.?\d+(?:e[+-]?\d+)?/g;
+
+	interface NumToken { value: number; start: number; end: number }
+	const nums: NumToken[] = [];
+	let nm;
+	while ((nm = numRegex.exec(pValue)) !== null) {
+		nums.push({
+			value: Number(nm[0]),
+			start: pValueStart + nm.index,
+			end: pValueStart + nm.index + nm[0].length,
+		});
+	}
+
+	// Group numbers into x,y pairs and track their text ranges
+	interface PointRange { point: [number, number]; start: number; end: number }
+	const pointRanges: PointRange[] = [];
+	for (let i = 0; i + 1 < nums.length; i += 2) {
+		const pt: [number, number] = [nums[i].value, nums[i + 1].value];
+		points.push(pt);
+		pointRanges.push({ point: pt, start: nums[i].start, end: nums[i + 1].end });
+	}
+
+	if (points.length === 0) {
+		return undefined;
+	}
+
+	// Check if cursor is within or near a specific point's text range
+	let activePointIndex: number | null = null;
+	for (let i = 0; i < pointRanges.length; i++) {
+		const pr = pointRanges[i];
+		if (offset >= pr.start && offset <= pr.end) {
+			activePointIndex = i;
+			break;
+		}
+	}
+
+	// If not directly on a point, find the nearest one within a small range
+	if (activePointIndex === null) {
+		let minDist = Infinity;
+		for (let i = 0; i < pointRanges.length; i++) {
+			const pr = pointRanges[i];
+			const dist = offset < pr.start ? pr.start - offset : offset - pr.end;
+			if (dist < minDist && dist < 3) {
+				minDist = dist;
+				activePointIndex = i;
+			}
+		}
+	}
+
+	return { points, activePointIndex };
 }
 
 // ─── Path segment detection ─────────────────────────────────────────
