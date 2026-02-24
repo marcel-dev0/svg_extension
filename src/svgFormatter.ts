@@ -21,6 +21,9 @@ function formatSvg(text: string): string {
 	// The replace callback receives the match offset as the last numeric arg before the source string.
 	let result = text;
 
+	// Format element attributes (each on its own line)
+	result = formatElementAttributes(result);
+
 	// path d="..."
 	result = result.replace(
 		/(<path\b[^>]*?\bd\s*=\s*")([^"]*?)(")/gi,
@@ -46,6 +49,40 @@ function formatSvg(text: string): string {
 	);
 
 	return result;
+}
+
+function parseAttributes(attrsStr: string): string[] {
+	const attrs: string[] = [];
+	const re = /([\w:.-]+)\s*(?:=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]*))?/g;
+	let m: RegExpExecArray | null;
+	while ((m = re.exec(attrsStr)) !== null) {
+		const attr = m[0].trim();
+		if (attr) {
+			attrs.push(attr);
+		}
+	}
+	return attrs;
+}
+
+function formatElementAttributes(text: string): string {
+	return text.replace(
+		/<([a-zA-Z][\w:.-]*)(\s[^>]*?)(\s*\/?>)/g,
+		(full: string, tagName: string, attrsRaw: string, close: string, offset: number) => {
+			const lineStart = text.lastIndexOf('\n', offset) + 1;
+			const lineText = text.substring(lineStart, offset);
+			const indentMatch = lineText.match(/^(\s*)/);
+			const tagIndent = indentMatch?.[1] ?? '';
+			const attrIndent = tagIndent + '\t';
+
+			const attrs = parseAttributes(attrsRaw);
+			if (attrs.length <= 1) {
+				return full;
+			}
+
+			const closeTrimmed = close.trim();
+			return `<${tagName}\n${attrs.map(a => attrIndent + a).join('\n')}\n${tagIndent}${closeTrimmed}`;
+		}
+	);
 }
 
 function getIndent(text: string, matchIndex: number): string {

@@ -18,6 +18,10 @@
       {
         "command": "svgPreview.open",
         "title": "SVG: Open Preview to the Side"
+      },
+      {
+        "command": "svgPreview.insertEmptyPath",
+        "title": "SVG: Insert Empty Path"
       }
     ]
   },
