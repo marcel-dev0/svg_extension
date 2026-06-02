@@ -44,6 +44,7 @@ body {
 #svg-content svg {
 	display: block;
 	overflow: visible;
+	border: 2px solid black;
 }
 
 .polygon-point-highlight {

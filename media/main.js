@@ -315,9 +315,7 @@ window.addEventListener('message', (event) => {
 			lastHighlightPathKey = pathKey;
 
 			// Center & scale when the highlighted element changes
-			if (elementChanged && newElement) {
-				centerOnElement(newElement);
-			}
+			centerOnElement(current);
 
 			// Path segment highlight (green)
 			if (message.segment) {
