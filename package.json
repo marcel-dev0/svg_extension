@@ -10,7 +10,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:xml"
+    "onLanguage:xml",
+    "onLanguage:svg",
+    "workspaceContains:**/*.svg"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -23,7 +25,22 @@
         "command": "svgPreview.insertEmptyPath",
         "title": "SVG: Insert Empty Path"
       }
-    ]
+    ],
+    "configurationDefaults": {
+      "workbench.editorAssociations": {
+        "*.svg": "default"
+      }
+    },
+    "configuration": {
+      "title": "SVG Preview",
+      "properties": {
+        "svgPreview.autoOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open the SVG preview beside the editor when an SVG file is opened."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-VS Code extension ("my-test") that provides a custom SVG preview editor. When users open `.svg` files, the extension offers an interactive webview-based editor with zoom controls and background toggling.
+VS Code extension ("svg1-alluneed") for working on SVG files as text. SVGs open in the normal text editor, and a webview preview panel opens beside it. The preview follows the active SVG editor, updates as the document changes, and highlights (and zooms to) the element, path segment, or polygon point under the cursor. The extension also provides an SVG formatter and a command to insert an empty `<path>`.
 
 ## Build & Development Commands
 
@@ -16,11 +16,20 @@ VS Code extension ("my-test") that provides a custom SVG preview editor. When us
 
 ## Architecture
 
-- **`src/extension.ts`** — Entry point. Registers the `SvgEditorProvider` on activation.
-- **`src/svgEditorProvider.ts`** — Implements `vscode.CustomTextEditorProvider`. Manages the webview lifecycle: renders SVG content inline, syncs document changes to the webview via `postMessage`, and applies edits back to the document when receiving `edit` messages from the webview.
-- **`media/main.js` + `media/main.css`** — Webview frontend assets (zoom controls, background toggle, SVG rendering). Served to the webview with a nonce-based CSP.
+- **`src/extension.ts`**: Entry point. On activation it:
+  - auto-opens the preview beside the first text editor shown for each SVG (controlled by the `svgPreview.autoOpen` setting),
+  - registers the `svgPreview.open` and `svgPreview.insertEmptyPath` commands,
+  - registers `SvgFormattingProvider` for `**/*.svg` (language `xml`),
+  - reopens SVGs as text if VS Code opens them in the built-in image preview (`imagePreview.previewEditor`). This is a fallback for the editor association below. It only runs when no `*.svg` entry exists in `workbench.editorAssociations`, and only once per file per session, so users can still choose the image preview with "Open With…".
+- **`src/svgPreviewPanel.ts`**: `SvgPreviewPanel`, a single `WebviewPanel` (a singleton held in `currentPanel`). It tracks the active SVG document, sends `update` messages with the full text when the document changes, and sends `highlight` messages on cursor moves. A `highlight` message carries the child-index path of the element at the cursor, plus segment info for `<path d>` or point info for `<polygon>`/`<polyline>` `points`. The text parsing for these (`findElementAtOffset`, path/points tokenizers) lives in this file.
+- **`src/svgFormatter.ts`**: `SvgFormattingProvider` puts element attributes on separate lines and reformats `path d` and `polygon`/`polyline` `points` data.
+- **`media/main.js` + `media/main.css`**: Webview frontend. Renders the SVG with `innerHTML`, handles pan/zoom (`scale`/`translate`), centers on the highlighted element, and draws segment/point overlays. Served to the webview with a nonce-based CSP.
 
-The extension registers as a custom editor for `*.svg` files with viewType `svgPreview.editor` and priority `option` (user must explicitly choose it).
+### Default editor
+
+`package.json` contributes `configurationDefaults` → `workbench.editorAssociations: { "*.svg": "default" }` so SVGs open in the text editor rather than VS Code's image preview. The runtime fallback in `extension.ts` covers cases where that default is not applied. The extension does **not** register a custom editor.
+
+Activation events: `onLanguage:xml`, `onLanguage:svg`, `workspaceContains:**/*.svg`.
 
 ## Key Conventions
 

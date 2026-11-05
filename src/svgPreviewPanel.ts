@@ -10,8 +10,11 @@ export class SvgPreviewPanel {
 	private trackedDocument: vscode.TextDocument | undefined;
 	private readonly disposables: vscode.Disposable[] = [];
 
-	public static open(context: vscode.ExtensionContext): void {
-		const editor = vscode.window.activeTextEditor;
+	public static isOpen(): boolean {
+		return SvgPreviewPanel.currentPanel !== undefined;
+	}
+
+	public static open(context: vscode.ExtensionContext, editor = vscode.window.activeTextEditor): void {
 		if (!editor || !editor.document.fileName.endsWith('.svg')) {
 			vscode.window.showErrorMessage('Open an SVG file first.');
 			return;
